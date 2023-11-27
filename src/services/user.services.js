@@ -12,7 +12,7 @@ export default class UserServices {
         return use;
       }
     
-    async createUser(data) {
+    async createUser(data) {console.log(data)
         const newUser = await User.create(data);
         return newUser;
       }
@@ -49,4 +49,11 @@ export default class UserServices {
       return User.update(data, { where: { ...condition } });
     }
     
+    async userExist(email) {
+      const user = await User.findOne({ where: { email } });
+      if (user) {
+        return user;
+      }
+      return false;
+    }
 }

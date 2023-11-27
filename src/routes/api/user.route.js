@@ -4,6 +4,9 @@ import registerValidation from '../../validations/register.validations';
 import UserController from '../../controllers/user.controller';
 import path from 'path';
 import passport from '../../middlewares/passport.middleware'
+import { checkLoggedInUser } from '../../middlewares/access.middleware';
+import resetValidation from '../../validations/reset.validation';
+import resetRequestValidation from '../../validations/resetRequest.validation';
 
 const routes = express.Router();
 
@@ -21,26 +24,30 @@ routes.post('/login', async (req, res) => {
     await new UserController().userLogin(req, res)
 })
 
-routes.get(
-    '/google/login',
-    retrieveFEBaseUrl,
-    passport.authenticate('google', {
-      session: false,
-      scope: ['profile', 'email'],
-      prompt: 'select_account'
-    }),
-);
-
 routes.post('/logout', async (req, res) => {
     await new UserController().Logout(req, res)
 })
 
-routes.get('/verify-email/:token', async (req, res) => {
-    await new UserController().verifyNewUser(req, res);
-  });
+routes.post('/update-profile',
+ checkLoggedInUser,
+ async (req, res) => {
+  await new UserController().profileUpdate(req, res)
+})
 
-routes.get('/verified', async (req, res) => {
-  res.sendFile(path.join(__dirname, '../../public/verified.html'));
-});
+routes.patch(
+  '/reset-password/:token',
+  resetValidation,
+  async (req, res) => {
+    await new UserController().passwordReset(req, res)
+  }
+);
+
+routes.post(
+  '/reset-password-request', 
+  resetRequestValidation,
+  async (req, res) => {
+    await new UserController().passwordResetRequest(req, res)
+  }
+);
 
 export default routes;
