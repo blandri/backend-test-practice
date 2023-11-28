@@ -2,8 +2,6 @@ import express from 'express';
 import { checkEmailExist, retrieveFEBaseUrl } from '../../middlewares/user.middleware';
 import registerValidation from '../../validations/register.validations';
 import UserController from '../../controllers/user.controller';
-import path from 'path';
-import passport from '../../middlewares/passport.middleware'
 import { checkLoggedInUser } from '../../middlewares/access.middleware';
 import resetValidation from '../../validations/reset.validation';
 import resetRequestValidation from '../../validations/resetRequest.validation';
@@ -20,11 +18,17 @@ routes.post(
     }
 );
 
+routes.get('/users', async (req, res) => {
+  await new UserController().getAllUsers(req, res)
+})
+
 routes.post('/login', async (req, res) => {
     await new UserController().userLogin(req, res)
 })
 
-routes.post('/logout', async (req, res) => {
+routes.post('/logout', 
+checkLoggedInUser,
+async (req, res) => {
     await new UserController().Logout(req, res)
 })
 

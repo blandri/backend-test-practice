@@ -25,8 +25,8 @@ module.exports = (sequelize, DataTypes) => {
   }
   Task.init({
     title: DataTypes.STRING,
-    Description: DataTypes.STRING,
-    assignees: DataTypes.ARRAY(DataTypes.STRING),
+    description: DataTypes.STRING,
+    assignees: DataTypes.STRING,
     start_date: DataTypes.DATE,
     end_date: DataTypes.DATE,
     priority: {
@@ -37,7 +37,26 @@ module.exports = (sequelize, DataTypes) => {
     file_attachment: {
       type: DataTypes.TEXT,
       defaultValue:
-        'https://ui'
+        ''
+    },
+    select_projects: DataTypes.STRING,
+    project_id: {
+      type: DataTypes.INTEGER,
+      default: null,
+      references: {
+        model: 'Project',
+        key: 'id',
+        as: 'project_id'
+      }
+    },
+    user_id: {
+      type: DataTypes.INTEGER,
+      default: null,
+      references: {
+        model: 'User',
+        key: 'id',
+        as: 'user_id'
+      }
     },
   }, {
     sequelize,

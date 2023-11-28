@@ -11,7 +11,7 @@ import ProjectServices from '../services/project.service';
 
 config();
 
-export default class UserController {
+export default class ProjectController {
   constructor() {
     this.userService = new ProjectServices()
   }
@@ -34,7 +34,7 @@ export default class UserController {
     }
   }
 
-  static async getAllProjects(req, res) {
+  async getAllProjects(req, res) {
     try {
       const projects = await new ProjectServices().getProjects()
       return res.status(200).json({

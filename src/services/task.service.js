@@ -7,33 +7,35 @@ export default class TaskServices {
     return await Task.create(data);
   }
 
-  async getTasks({ where, offset, order, limit }) {
-    const rooms = await Task.findAndCountAll({
-      where,
-      offset,
-      limit,
-      order: order || [['createdAt', 'DESC']],
+  async getTasks(offset, filter, limit) {
+    const tasks = await Task.findAndCountAll({
+      offset: offset || 0,
+      limit: limit || null,
+      order: filter && [[filter, 'DESC']] || [['createdAt', 'DESC']],
       include: {
         model: Project,
         as: 'project',
         attributes: ['title', 'description']
       }
     });
-    return rooms;
+    return tasks;
   }
 
   async updateTask(data, id) {
-    /* istanbul ignore next */
-    return await Task.update(data, {
-      where: {
-        id: id
-      },
-      returning: true
+    const updated = await Task.update(data, {
+      where: { id },
+      returning: true,
+      raw: true
     });
+    return updated
   }
 
-  async destroyTask({ where }) {
-    const destroyed = await Task.destroy({ where });
+  async destroyTask(where) {
+    const destroyed = await Task.destroy({
+      where: {
+        id: where
+      }
+    });
     return destroyed;
   }
 }

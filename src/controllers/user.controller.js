@@ -38,7 +38,7 @@ export default class UserController {
             password: hashPassword(password)
         }, res)
         await new ProfileService().createProfile({ user_id: user.id })
-        const token = generateToken({ userId: user.id }, '1d');
+        const token = generateToken({ userId: user.id, email: user.email }, '1d');
 
       return res.status(201).header('authenticate', token).json({
           message: 'Created user successfully',
@@ -53,7 +53,7 @@ export default class UserController {
     }
   }
 
-  static async getAllUsers(req, res) {
+  async getAllUsers(req, res) {
     try {
       const users = await new UserService().getAllUsers();
       return res.status(200).json({
@@ -71,28 +71,31 @@ export default class UserController {
   async userLogin(req, res) {
     try {
       const user = await this.userService.userLogin(req.body.email, res);
-      const validation = await comparePassword(
-        req.body.password,
-        user.password
-      );
 
-      if (validation) {
-        const token = await generateToken(
-          {
-            email: user.email,
-            userId: user.id,
-            firstName: user.name,
-          },
-          '1d'
+      if(user){
+        const validation = await comparePassword(
+          req.body.password,
+          user.password
         );
-        return res.status(201).header('authenticate', token).json({
-          message: 'Logged in successfully',
-          token,
-          name: user.name,
-        });
+        if (validation) {
+          const token = await generateToken(
+            {
+              email: user.email,
+              userId: user.id,
+              firstName: user.name,
+            },
+            '1d'
+          );
+          return res.status(201).header('authenticate', token).json({
+            message: 'Logged in successfully',
+            token,
+            name: user.name,
+          });
+        }
+        return res.status(400).json({ message: 'Invalid password' });
       }
-      return res.status(400).json({ message: 'Invalid password' });
-    } catch (error) {
+      return res.status(400).json({ message: 'This account does not exist' });
+    } catch (error) {console.log(error)
       return res.status(404).json({
         message: 'Error occured while logging in',
         error
@@ -105,14 +108,13 @@ export default class UserController {
       const user = await this.userService.userLogout(
         req.headers.authorization.split(' ')[1]
       );
-      /* istanbul ignore next */
-      if (user.name) {
+      
+      if (user.first_name) {
         return res.status(200).json({
-          message: `You have been logged out ${user.name}`
+          message: `You have been logged out ${user.first_name}`
         });
       }
     } catch (error) {
-      console.log(error);
       return res.status(500).json({
         error: error.message,
         message: 'error occured while logging you out'
@@ -135,7 +137,7 @@ export default class UserController {
                   <table role="presentation" border="0" cellpadding="0" cellspacing="0">
                     <tbody>
                       <tr>
-                        <td> <a href="${process.env.FRONT_END_URL}/resetPassword/token=${tokenid}" target="_blank">Reset password</a> </td>
+                        <td> <a href="${process.env.FRONT_END_URL}/reset-password/token?${tokenid}" target="_blank">Reset password</a> </td>
                       </tr>
                     </tbody>
                   </table>
@@ -146,7 +148,7 @@ export default class UserController {
         `;
         const html = message(code);
         await nodemailer(
-          'landrybrok3@gmail.com',
+          exist.email,
           'Reset password',
           'Request for reset password',
           html
@@ -169,7 +171,7 @@ export default class UserController {
     try {
       const { password } = req.body;
       const { token } = req.params;
-      const userInfo = decodeToken(token.split('=')[1])
+      const userInfo = decodeToken(token)
 
       const userId = userInfo.userId;
       const newPassword = hashPassword(password)
@@ -194,7 +196,7 @@ async profileUpdate(req, res) {
       gender,
       country
     } = req.body;
-    console.log('===>', req.body)
+  
     const updatedUser = await new ProfileService().updateProfile(
       {
         occupation,
