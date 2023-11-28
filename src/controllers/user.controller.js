@@ -7,6 +7,7 @@
 /* eslint-disable import/no-unresolved */
 /* eslint-disable require-jsdoc */
 import { config } from 'dotenv';
+import { User } from '../../database/models'
 import UserService from '../services/user.services'
 import {
   generateToken,
@@ -17,6 +18,7 @@ import {
 import nodemailer from '../helpers/nodemailer.helper'
 import message from '../views/verificationMessage';
 import fs from 'fs'
+import ProfileService from '../services/profile.service';
 
 config();
 
@@ -27,42 +29,16 @@ export default class UserController {
 
   async createUser(req, res) {
     try {
-        const { name, email, password } = req.body
+        const { first_name, last_name, email, password } = req.body
+
         const user = await new UserService().createUser({
-            name,
+            first_name, 
+            last_name,
             email,
             password: hashPassword(password)
         }, res)
-        const token = generateToken({ id: user.id }, '1d');
-
-        const text = `
-         Hello, thanks for registering on Barefoot Nomad site.
-         Please copy and paste the address below into address bar to verify your account.
-         $${process.env.BASE_URL}/api/users/verify-email/${token}
-         `;
-
-      const code = `
-      <h1><strong>Account created require verification</strong></h1>
-      <p style="text-align: center;">Thank you for registering into Barefoot Nomad. Click the link below to verify and activate your account.</p>
-      <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="btn btn-primary">
-            <tbody>
-              <tr>
-                <td align="center">
-                  <table role="presentation" border="0" cellpadding="0" cellspacing="0">
-                    <tbody>
-                      <tr>
-                        <td> <a href="${process.env.FRONT_END_URL}/verify?token=${token}" target="_blank">Verify email</a> </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-      `;
-      const html = message(code);
-
-      await nodemailer('landrybrok3@gmail.com', 'Email Verification', text, html);
+        await new ProfileService().createProfile({ user_id: user.id })
+        const token = generateToken({ userId: user.id }, '1d');
 
       return res.status(201).header('authenticate', token).json({
           message: 'Created user successfully',
@@ -99,6 +75,7 @@ export default class UserController {
         req.body.password,
         user.password
       );
+
       if (validation) {
         const token = await generateToken(
           {
@@ -143,136 +120,101 @@ export default class UserController {
     }
   }
 
-  async verifyNewUser(req, res) {
+  async passwordResetRequest(req, res) {
     try {
+      const exist = await new UserService().userExist(req.body.email);
+      if (exist.email) {
+        const tokenid = generateToken({ userId: exist.id }, '10m');
+        const code = `
+        <h1><strong>You have requested to reset your password</strong></h1>
+        <p>We cannot simply send you your old password. A unique link to reset your password has been generated for you. To reset your password, click the following link and follow the instructions.</p>
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="btn btn-primary">
+            <tbody>
+              <tr>
+                <td align="center">
+                  <table role="presentation" border="0" cellpadding="0" cellspacing="0">
+                    <tbody>
+                      <tr>
+                        <td> <a href="${process.env.FRONT_END_URL}/resetPassword/token=${tokenid}" target="_blank">Reset password</a> </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        `;
+        const html = message(code);
+        await nodemailer(
+          'landrybrok3@gmail.com',
+          'Reset password',
+          'Request for reset password',
+          html
+        );
+        return res.status(200).json({
+          status: 200,
+          message: 'Password reset link has been sent to your email'
+        });
+      } else {
+        res.status(404).json({ status: 404, message: 'Email not found' });
+      }
+    } catch (error) {
+      /* istanbul ignore next */
+      console.log(error);
+      return res.status(500).json({ error: error.message });
+    }
+  }
+
+  async passwordReset(req, res) {
+    try {
+      const { password } = req.body;
       const { token } = req.params;
+      const userInfo = decodeToken(token.split('=')[1])
 
-      const userInfo = decodeToken(token.split('=')[1]);
+      const userId = userInfo.userId;
+      const newPassword = hashPassword(password)
 
-      const userId = userInfo.id;
-
-      const user = await new UserService().findById(userId)
-
-    //   await user.update({ isVerified: true }, { where: { id: userId } });
-      return res.status(200).json({
-        status: 200,
-        message: 'Your email has been verified successfully',
-        redirect: `${process.env.BASE_URL}/api/user/verified`,
-        data: user
-      });
-
-    //   return res.redirect(`${process.env.BASE_URL}/api/user/verified`);
+      User.update({ password: newPassword }, { where: { id: userId } });
+    
+      return res
+        .status(200)
+        .send({ message: 'Your new password has been set return to Login' });
     } catch (error) {
       return res.status(500).send({ message: error.message });
     }
   }
 
-  async googleLogin(req, res) {
-    try {
-      const profile = req.user;
-console.log(profile)
-      let user = await new UserService().getUser(profile.emails[0].value);
-
-      if (!user) {
-        user = await new UserService().createUser({
-          email: profile.emails && profile.emails[0].value,
-          password: null,
-          name: profile.name && profile.name.familyName
-        });
-      }
-
-      const token = generateToken(
-        {
-          email: user.email,
-          userId: user.id,
-          firstName: user.name,
-        },
-        '1d'
-      );
-
-      const params = new URLSearchParams();
-      params.set('email', user.email);
-      params.set('first_name', user.name);
-      params.set('token', token);
-
-      return res
-        .status(200)
-        .json({
-            status: 200,
-            message: 'Your have logged in successfully',
-            token
-        });
-        // .send(
-        //   `<script> window.location = "${fs.readFileSync(
-        //     'FE_BASE_URL'
-        //   )}/?${params}"</script>`
-        // );
-    } catch (error) {
-      return res.status(500).json({
-        message: 'Error occured while logging in',
-        data: error.message
-      });
-    }
+async profileUpdate(req, res) {
+  try {
+    const { user } = req;
+    const {
+      occupation,
+      language,
+      age,
+      gender,
+      country
+    } = req.body;
+    console.log('===>', req.body)
+    const updatedUser = await new ProfileService().updateProfile(
+      {
+        occupation,
+        language,
+        age,
+        gender,
+        country
+      },
+      user.id
+    );
+    
+    return res.status(200).json({
+      message: 'Profile updated',
+      data: updatedUser
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: 'Error occured while updating your profile',
+      error
+    });
   }
-
-//   static async passwordResetRequest(req, res) {
-//     try {
-//       const exist = await new UserService().userExist(req.body.email);
-//       if (exist.email) {
-//         const tokenid = generateToken({ id: exist.id }, '10m');
-//         const code = `
-//         <h1><strong>You have requested to reset your password</strong></h1>
-//         <p>We cannot simply send you your old password. A unique link to reset your password has been generated for you. To reset your password, click the following link and follow the instructions.</p>
-//         <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="btn btn-primary">
-//             <tbody>
-//               <tr>
-//                 <td align="center">
-//                   <table role="presentation" border="0" cellpadding="0" cellspacing="0">
-//                     <tbody>
-//                       <tr>
-//                         <td> <a href="${process.env.FRONT_END_URL}/resetPassword?token=${tokenid}" target="_blank">Reset password</a> </td>
-//                       </tr>
-//                     </tbody>
-//                   </table>
-//                 </td>
-//               </tr>
-//             </tbody>
-//           </table>
-//         `;
-//         const html = message(code);
-//         await nodemailer(
-//           exist.email,
-//           'Reset password',
-//           'Request for reset password',
-//           html
-//         );
-//         return res.status(200).json({
-//           status: 200,
-//           message: 'Password reset link has been sent to your email'
-//         });
-//       } else {
-//         res.status(404).json({ status: 404, message: 'Email not found' });
-//       }
-//     } catch (error) {
-//       /* istanbul ignore next */
-//       console.log(error);
-//       return res.status(500).json({ error: error.message });
-//     }
-//   }
-
-//   static async passwordReset(req, res) {
-//     try {
-//       const { password } = req.body;
-//       const { token } = req.params;
-//       const userInfo = jwt.verify(token, process.env.SECRETE);
-//       const userId = userInfo.id;
-//       const newPassword = await bcryptjs.hash(password, 10);
-//       User.update({ password: newPassword }, { where: { id: userId } });
-//       return res
-//         .status(200)
-//         .send({ message: 'Your new password has been set return to Login' });
-//     } catch (error) {
-//       return res.status(500).send({ message: error.message });
-//     }
-//   }
+}
 }

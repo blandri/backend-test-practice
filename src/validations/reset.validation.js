@@ -1,9 +1,7 @@
 import Joi from 'joi';
 
-const registerValidation = (req, res, next) => {
-    const userSchema = Joi.object({
-        first_name: Joi.string().empty().required(),
-        last_name: Joi.string().empty().required(),
+const resetValidation = (req, res, next) => {
+    const resetSchema = Joi.object({
         password: Joi.string()
             .required()
             .empty()
@@ -14,10 +12,9 @@ const registerValidation = (req, res, next) => {
                 'string.empty': '{{#label}} can not be empty',
                 'string.pattern.base': '{{#label}} must contain atleast a number, upper-case letter and longer than 8 characters'
             }),
-        email: Joi.string().required().email(),
     });
 
-    const result = userSchema.validate(req.body);
+    const result = resetSchema.validate(req.body);
     if (result.error) {
         res.status(400).json({
             message: result.error.details[0].message.replace(/["'`]+/g, '')
@@ -27,4 +24,4 @@ const registerValidation = (req, res, next) => {
     }
 };
 
-export default registerValidation;
+export default resetValidation;
