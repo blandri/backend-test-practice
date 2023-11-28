@@ -148,7 +148,7 @@ export default class UserController {
         `;
         const html = message(code);
         await nodemailer(
-          'bishingalandry@gmail.com',
+          exist.email,
           'Reset password',
           'Request for reset password',
           html
