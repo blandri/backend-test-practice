@@ -57,6 +57,6 @@
 - download tasks: `basePath/task/download-excel`
 - get all projects: `basePath/task/projects`
 
-# Emial
+# Emails
 
 On reset password request you will receive an email with reset link from this address `bishingalandry@gmail.com`
