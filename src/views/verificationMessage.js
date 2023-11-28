@@ -335,7 +335,7 @@ const message = (code) => {
         </style>
       </head>
       <body>
-        <span class="preheader">Email sent from Barefoot Nomad</span>
+        <span class="preheader">Email sent from qt test</span>
         <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="body">
           <tr>
             <td>&nbsp;</td>
@@ -352,7 +352,7 @@ const message = (code) => {
                       <tr>
                               <td style="text-align:center;">
                                   <a href="#" title="logo" target="_blank">
-                                      <img width="100" src="https://quanam.com/wp-content/uploads/2019/06/cabal_gde.jpg" title="logo" alt="logo">
+                                      
                                   </a>
                               </td>
                           </tr>
@@ -376,12 +376,12 @@ const message = (code) => {
                   <table role="presentation" border="0" cellpadding="0" cellspacing="0">
                     <tr>
                       <td class="content-block">
-                        <span class="apple-link">Barefoot Nomad</span>
+                        <span class="apple-link">Qt</span>
                       </td>
                     </tr>
                     <tr>
                       <td class="content-block powered-by">
-                        Powered by <a href="#">BarefootNomad</a>.
+                        Powered by <a href="#">Qt</a>.
                       </td>
                     </tr>
                   </table>

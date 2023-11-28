@@ -2,10 +2,10 @@ import { User } from '../../database/models'
 import { decodeToken } from '../helpers/user.helpers';
 
 export default class UserServices {
-    async getAllUsers(id) {
+    async getAllUsers() {
         let users;
         users = await User.findAll({
-            attributes: ['name', 'email']
+            attributes: ['id', 'first_name', 'last_name', 'email']
           });
     
         const use = users.map((user) => user.dataValues);

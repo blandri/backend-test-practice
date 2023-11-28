@@ -1,4 +1,6 @@
 'use strict';
+const { taskPriority } = require('../../src/utils/task.utils');
+
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize, DataTypes) {
@@ -22,17 +24,38 @@ module.exports = {
         type: Sequelize.DATE
       },
       file_attachment: {
-        type: DataTypes.TEXT,
+        type: Sequelize.TEXT,
         defaultValue:
-          'https://ui'
+          ''
       },
-      status: {
+      priority: {
         type: Sequelize.ENUM,
-        values: tripStatus,
+        values: taskPriority,
         defaultValue: 'HIGH'
       },
       assignees: {
-        type: DataTypes.ARRAY(DataTypes.STRING)
+        type: Sequelize.STRING
+      },
+      select_projects: {
+        type: Sequelize.STRING
+      },
+      project_id: {
+        type: Sequelize.INTEGER,
+        default: null,
+        references: {
+          model: 'Projects',
+          key: 'id',
+          as: 'project_id'
+        }
+      },
+      user_id: {
+        type: Sequelize.INTEGER,
+        default: null,
+        references: {
+          model: 'Users',
+          key: 'id',
+          as: 'Users_id'
+        }
       },
       createdAt: {
         allowNull: false,

@@ -3,7 +3,8 @@ import Joi from 'joi';
 const taskValidation = (req, res, next) => {
     const taskSchema = Joi.object({
         title: Joi.string().empty().required(),
-        assignees:  Joi.array(),
+        assignees:  Joi.string().empty().required(),
+        select_projects: Joi.string().empty().required(),
         priority: Joi.string().required().valid('NORMAL', 'HIGH').empty(),
         description: Joi.string().empty().required().max(100, 'Project description must be lower than 100 characters'),
         start_date: Joi.date().iso().required().empty().min(Date.now()).messages({
