@@ -18,14 +18,13 @@ export default async function main(receiver, subject, text, context) {
     const emailClient = nodemailer.createTransport(transport)
 
     const info = await emailClient.sendMail({
-            from: 'bishingalandry@gmail.com',
+            from: 'landrybrok3@gmail.com',
             to:receiver,
             subject,
             text,
             html:context
         })
-        .catch((error) => {
-            console.log('===>',error)
+        .catch((error) => {console.log('===>', error)
             throw Error(error);
         });
 

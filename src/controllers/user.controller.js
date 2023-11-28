@@ -122,7 +122,7 @@ export default class UserController {
     }
   }
 
-  async passwordResetRequest(req, res) {
+  async passwordResetRequest(req, res) {console.log('==>', req)
     try {
       const exist = await new UserService().userExist(req.body.email);
       if (exist.email) {
@@ -148,7 +148,7 @@ export default class UserController {
         `;
         const html = message(code);
         await nodemailer(
-          exist.email,
+          'bishingalandry@gmail.com',
           'Reset password',
           'Request for reset password',
           html
